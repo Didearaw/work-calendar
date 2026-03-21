@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Календарь графика 2/2 — рабочие и выходные дни</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            width: 100%;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            padding: 24px 20px 32px 20px;
+            transition: all 0.2s;
+        }
+
+        h1 {
+            font-size: 1.7rem;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        h1 small {
+            font-size: 0.85rem;
+            font-weight: normal;
+            background: #eef2ff;
+            padding: 4px 12px;
+            border-radius: 40px;
+            color: #2563eb;
+        }
+
+        .description {
+            color: #475569;
+            margin-bottom: 28px;
+            border-left: 4px solid #3b82f6;
+            padding-left: 16px;
+            font-size: 0.95rem;
+        }
+
+        .settings-panel {
+            background: #f8fafc;
+            border-radius: 24px;
+            padding: 20px 24px;
+            margin-bottom: 32px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            align-items: flex-end;
+            border: 1px solid #e2e8f0;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 180px;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #334155;
+            letter-spacing: 0.3px;
+        }
+
+        .input-group input, .input-group select {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .radio-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .radio-options label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: normal;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        button {
+            background: #1e293b;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 10px 28px;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        button:hover {
+            background: #0f172a;
+            transform: scale(0.98);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 28px;
+            margin-top: 16px;
+        }
+
+        .month-card {
+            background: #ffffff;
+            border-radius: 28px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            transition: all 0.1s;
+        }
+
+        .month-name {
+            background: #f1f5f9;
+            padding: 14px 0;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #0f172a;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: #fefce8;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .weekday {
+            text-align: center;
+            padding: 10px 0;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background-color: white;
+        }
+
+        .day-cell {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-bottom: 1px solid #f1f5f9;
+            border-right: 1px solid #f1f5f9;
+            position: relative;
+            transition: 0.05s linear;
+        }
+
+        .day-cell:nth-child(7n) {
+            border-right: none;
+        }
+
+        /* Цвета рабочих и выходных */
+        .work-day {
+            background-color: #fee2e2;
+            color: #991b1b;
+            font-weight: 600;
+        }
+
+        .rest-day {
+            background-color: #dcfce7;
+            color: #166534;
+            font-weight: 600;
+        }
+
+        .empty-day {
+            background-color: #fafaf9;
+            color: #cbd5e1;
+        }
+
+        .future-placeholder {
+            background-color: #fef9e3;
+            color: #b45309;
+            font-weight: 400;
+            opacity: 0.8;
+        }
+
+        .legend {
+            display: flex;
+            gap: 24px;
+            margin-top: 28px;
+            padding-top: 18px;
+            border-top: 1px solid #e2e8f0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+
+        .legend .color-box {
+            width: 24px;
+            height: 24px;
+            border-radius: 12px;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 24px;
+        }
+
+        @media (max-width: 700px) {
+            .settings-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .radio-options {
+                justify-content: space-between;
+            }
+            .calendar-grid {
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <h1>
+        📅 График 2/2 
+        <small>работа / отдых</small>
+    </h1>
+    <div class="description">
+        🔁 Цикл: 2 рабочих дня → 2 выходных. <br>
+        Выберите дату, с которой начинается отсчёт, и укажите, какой это день по счёту в вашем цикле. 
+        Календарь покажет рабочие (красный) и выходные (зелёный) дни на 12 месяцев вперёд.
+    </div>
+
+    <div class="settings-panel">
+        <div class="input-group">
+            <label>📆 Начальная дата</label>
+            <input type="date" id="startDateInput" value="">
+        </div>
+        <div class="input-group radio-group">
+            <label>🔘 Позиция в цикле (2/2)</label>
+            <div class="radio-options" id="cyclePositionGroup">
+                <label>
+                    <input type="radio" name="cyclePos" value="0" checked> 
+                    🟥 1-й рабочий
+                </label>
+                <label>
+                    <input type="radio" name="cyclePos" value="1"> 
+                    🟥 2-й рабочий
+                </label>
+                <label>
+                    <input type="radio" name="cyclePos" value="2"> 
+                    🟩 1-й выходной
+                </label>
+                <label>
+                    <input type="radio" name="cyclePos" value="3"> 
+                    🟩 2-й выходной
+                </label>
+            </div>
+        </div>
+        <div class="input-group">
+            <label>📅 Период</label>
+            <select id="monthsAheadSelect">
+                <option value="12">На 12 месяцев вперёд</option>
+                <option value="6">На 6 месяцев</option>
+                <option value="18">На 18 месяцев</option>
+                <option value="24">На 24 месяца</option>
+            </select>
+        </div>
+        <button id="generateBtn">✨ Показать календарь</button>
+    </div>
+
+    <div id="calendarContainer" class="calendar-grid">
+        <!-- Календарь будет вставлен сюда -->
+        <div style="text-align: center; grid-column: 1/-1; padding: 40px;">⚙️ Настройте параметры и нажмите «Показать календарь»</div>
+    </div>
+
+    <div class="legend">
+        <span><div class="color-box" style="background: #fee2e2; border: 1px solid #fecaca;"></div> Рабочий день</span>
+        <span><div class="color-box" style="background: #dcfce7; border: 1px solid #bbf7d0;"></div> Выходной день</span>
+        <span><div class="color-box" style="background: #fafaf9; border: 1px solid #e2e8f0;"></div> День до начала / без данных</span>
+    </div>
+    <div class="footer-note">
+        * Цвета рассчитаны строго по графику 2/2, начиная с выбранной даты и её роли в цикле.
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- DOM элементы ----------
+        const startDateInput = document.getElementById('startDateInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const calendarContainer = document.getElementById('calendarContainer');
+        const monthsAheadSelect = document.getElementById('monthsAheadSelect');
+        
+        // Получаем выбранную позицию цикла (0..3)
+        function getCycleStartIndex() {
+            const radios = document.getElementsByName('cyclePos');
+            for(let i = 0; i < radios.length; i++) {
+                if(radios[i].checked) return parseInt(radios[i].value, 10);
+            }
+            return 0; // по умолчанию 1-й рабочий
+        }
+
+        // Устанавливаем сегодняшнюю дату как значение по умолчанию (формат YYYY-MM-DD)
+        function setDefaultDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            startDateInput.value = `${year}-${month}-${day}`;
+        }
+        setDefaultDate();
+
+        // Вспомогательная функция: разница в днях между двумя датами (date2 - date1) в целых днях
+        function diffDays(dateFrom, dateTo) {
+            const utcFrom = Date.UTC(dateFrom.getFullYear(), dateFrom.getMonth(), dateFrom.getDate());
+            const utcTo = Date.UTC(dateTo.getFullYear(), dateTo.getMonth(), dateTo.getDate());
+            return Math.floor((utcTo - utcFrom) / (1000 * 60 * 60 * 24));
+        }
+
+        // Определение статуса дня: 'work' или 'rest' на основе цикла
+        // startDate: начальная дата (объект Date), startIndex: 0..3 (позиция в цикле в startDate)
+        // currentDate: проверяемая дата (объект Date)
+        function getDayStatus(startDate, startIndex, currentDate) {
+            // если текущая дата раньше начальной - возвращаем null (не определено)
+            if (currentDate < startDate) return null;
+            const daysDiff = diffDays(startDate, currentDate);
+            const cyclePos = (startIndex + daysDiff) % 4;
+            // 0 и 1 -> рабочие дни; 2 и 3 -> выходные
+            return (cyclePos === 0 || cyclePos === 1) ? 'work' : 'rest';
+        }
+
+        // Генерация календаря: создает HTML для заданного диапазона месяцев
+        // startPoint: Date (начальная дата, включительно)
+        // monthsCount: сколько месяцев показать, начиная с месяца startPoint
+        // startCycleIndex: 0..3
+        function renderCalendar(startPoint, monthsCount, startCycleIndex) {
+            if (!startPoint || isNaN(startPoint.getTime())) {
+                calendarContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:red;">❌ Ошибка: некорректная начальная дата</div>';
+                return;
+            }
+
+            // Начало: клонируем дату, чтобы не мутировать
+            let currentMonthStart = new Date(startPoint.getFullYear(), startPoint.getMonth(), 1);
+            const monthsToShow = Math.max(1, Math.min(36, monthsCount)); // ограничим 36 для производительности
+            
+            const calendarFragments = [];
+
+            for (let m = 0; m < monthsToShow; m++) {
+                const year = currentMonthStart.getFullYear();
+                const month = currentMonthStart.getMonth(); // 0-11
+                const firstDayOfMonth = new Date(year, month, 1);
+                const lastDayOfMonth = new Date(year, month + 1, 0);
+                const daysInMonth = lastDayOfMonth.getDate();
+                
+                // день недели первого дня месяца (0 = воскресенье, 1 = понедельник...)
+                // для удобства сделаем понедельник первым днём? Оставим классический: воскресенье первое (0 вс)
+                // но для читаемости добавим подписи: ПН, ВТ, СР, ЧТ, ПТ, СБ, ВС
+                // Изменим сдвиг, чтобы первый день недели был понедельник. Для этого вычислим номер дня недели и подкорректируем.
+                // В JS getDay(): 0 вс, 1 пн, 2 вт, 3 ср, 4 чт, 5 пт, 6 сб.
+                // Мы хотим отображать с понедельника (1) первая ячейка.
+                let startWeekday = firstDayOfMonth.getDay(); // 0 вс .. 6 сб
+                // сдвиг чтобы понедельник был индекс 0: если воскресенье (0) то это 6 позиция в сетке (последняя)
+                // удобнее создать массив из 42 ячеек (6 недель) и заполнить
+                const totalCells = 42;
+                const daysArray = new Array(totalCells).fill(null);
+                
+                // Заполним числами
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const currentDate = new Date(year, month, d);
+                    const weekDay = currentDate.getDay(); // 0 вс
+                    // индекс ячейки: пусть понедельник первая колонка => преобразуем день недели в индекс от 0 (пн) до 6 (вс)
+                    let colIndex = (weekDay === 0) ? 6 : weekDay - 1; // пн=0, вт=1, ср=2, чт=3, пт=4, сб=5, вс=6
+                    const rowOffset = 0;
+                    // вычисляем позицию в массиве: первая неделя начинается с первой строки, row = 0
+                    // позиция числа: номер недели от начала месяца, находим строку через кол-во дней
+                    // проще: вычислить порядковый номер ячейки для 1-го числа
+                    const firstDayCol = (firstDayOfMonth.getDay() === 0) ? 6 : firstDayOfMonth.getDay() - 1;
+                    const cellIndex = (Math.floor((d + firstDayCol - 1) / 7) * 7) + colIndex;
+                    if (cellIndex >= 0 && cellIndex < totalCells) {
+                        daysArray[cellIndex] = { dayNumber: d, date: currentDate };
+                    }
+                }
+
+                // строим HTML месяца
+                const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+                const monthName = `${monthNames[month]} ${year}`;
+                
+                let monthHtml = `
+                    <div class="month-card">
+                        <div class="month-name">${monthName}</div>
+                        <div class="weekdays">
+                            <div class="weekday">ПН</div><div class="weekday">ВТ</div><div class="weekday">СР</div>
+                            <div class="weekday">ЧТ</div><div class="weekday">ПТ</div><div class="weekday">СБ</div>
+                            <div class="weekday">ВС</div>
+                        </div>
+                        <div class="days-grid">
+                `;
+                
+                // заполняем 42 ячейки
+                for (let i = 0; i < totalCells; i++) {
+                    const cellData = daysArray[i];
+                    if (!cellData) {
+                        // пустая ячейка
+                        monthHtml += `<div class="day-cell empty-day"></div>`;
+                        continue;
+                    }
+                    const { dayNumber, date } = cellData;
+                    // определяем статус относительно startPoint
+                    let statusClass = '';
+                    let tooltip = '';
+                    if (date < startPoint) {
+                        statusClass = 'empty-day';  // день до начала цикла (серый)
+                    } else {
+                        const status = getDayStatus(startPoint, startCycleIndex, date);
+                        if (status === 'work') {
+                            statusClass = 'work-day';
+                        } else if (status === 'rest') {
+                            statusClass = 'rest-day';
+                        } else {
+                            statusClass = 'empty-day';
+                        }
+                    }
+                    monthHtml += `<div class="day-cell ${statusClass}">${dayNumber}</div>`;
+                }
+                
+                monthHtml += `</div></div>`;
+                calendarFragments.push(monthHtml);
+                
+                // переход на следующий месяц
+                currentMonthStart = new Date(year, month + 1, 1);
+            }
+            
+            calendarContainer.innerHTML = calendarFragments.join('');
+        }
+
+        // Основная функция: собрать данные и построить календарь
+        function buildCalendar() {
+            // Получаем начальную дату из input
+            const startDateStr = startDateInput.value;
+            if (!startDateStr) {
+                calendarContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#b91c1c;">⚠️ Пожалуйста, выберите начальную дату</div>';
+                return;
+            }
+            
+            const startDate = new Date(startDateStr);
+            if (isNaN(startDate.getTime())) {
+                calendarContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#b91c1c;">❌ Неверный формат даты</div>';
+                return;
+            }
+            
+            const cycleIndex = getCycleStartIndex();  // 0..3
+            const monthsCount = parseInt(monthsAheadSelect.value, 10);
+            
+            // Показываем лоадер
+            calendarContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding: 30px;">📆 Строим календарь на год вперёд...</div>';
+            
+            // Используем setTimeout для плавного обновления (чтобы ui не блокировался)
+            setTimeout(() => {
+                try {
+                    renderCalendar(startDate, monthsCount, cycleIndex);
+                } catch (err) {
+                    console.error(err);
+                    calendarContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:red;">⚠️ Ошибка при отображении календаря, проверьте параметры</div>';
+                }
+            }, 10);
+        }
+        
+        // Обработчик кнопки
+        generateBtn.addEventListener('click', buildCalendar);
+        
+        // Инициализация: при загрузке страницы показать календарь с сегодняшней датой и позицией "1-й рабочий"
+        // Небольшая задержка для корректной установки даты по умолчанию
+        window.addEventListener('DOMContentLoaded', () => {
+            // Убедимся, что дата установлена (сегодня)
+            if (!startDateInput.value) setDefaultDate();
+            // По умолчанию выбрано 12 месяцев, позиция 0 (1-й рабочий) уже checked
+            buildCalendar();
+        });
+        
+        // Дополнительно: при изменении select или радиокнопок можно автообновлять? 
+        // По желанию, но для простоты оставим кнопку, но добавим небольшую эргономику: клик на радио или селект не ломает интерфейс, 
+        // однако пользователь сам нажимает кнопку.
+        // Добавим слушатель для удобства - если нажали Enter в поле даты, тоже обновляем.
+        startDateInput.addEventListener('change', () => buildCalendar());
+        // также можно по изменению select делать автообновление, но оставим как опцию, но лучше чтобы не было лишних перерисовок
+        monthsAheadSelect.addEventListener('change', () => buildCalendar());
+        // радио кнопки тоже могут обновлять календарь автоматически - удобно
+        const radios = document.getElementsByName('cyclePos');
+        for(let r of radios) {
+            r.addEventListener('change', () => buildCalendar());
+        }
+    })();
+</script>
+</body>
+</html>
